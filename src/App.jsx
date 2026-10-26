@@ -663,31 +663,28 @@ const [scenarioSource, setScenarioSource] = useState("fallback");
               </div>
 
               <div className="flex items-end justify-between px-1 pb-2 pt-2">
-                <div>
-                  <div className="text-sm font-semibold text-[#285749]">
-                    Choose Scenario
-                  </div>
-                  <div className="text-[10px] text-[#6b8178]">
-                    Select a conversation to practice
-                  </div>
-                </div>
+  <div>
+    <div className="text-sm font-semibold text-[#285749]">
+      Choose Scenario
+    </div>
 
-                <div className="text-right">
-  <div className="text-[10px] font-semibold text-[#5c7c6e]">
-    {scenarios.length} available
+    <div className="text-[10px] text-[#6b8178]">
+      Select a conversation to practice
+    </div>
   </div>
 
-  <div className="text-[9px] font-semibold text-[#326653]">
-    {scenarioSource === "supabase"
-      ? "Database connected"
-      : "Local fallback"}
-  </div>
-</div> className="ml-2 text-[10px] font-semibold text-[#326653]">
-  {scenarioSource === "supabase" ? "• Database connected" : "• Local fallback"}
-</span>
-                </span>
-              </div>
+  <div className="text-right">
+    <div className="text-[10px] font-semibold text-[#5c7c6e]">
+      {scenarios.length} available
+    </div>
 
+    <div className="text-[9px] font-semibold text-[#326653]">
+      {scenarioSource === "supabase"
+        ? "Database connected"
+        : "Local fallback"}
+    </div>
+  </div>
+</div>
               <div className="max-h-[455px] space-y-1.5 overflow-y-auto pr-1">
                 {scenarios.map((item) => (
                   <button
