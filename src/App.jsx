@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Phone,
   ShieldCheck,
@@ -7,7 +7,8 @@ import {
   UserCog,
 } from "lucide-react";
 
-const scenarios = [
+import { supabase } from "./lib/supabase";
+const fallbackScenarios = [
   {
     id: 1,
     title: "Maintenance Follow-up",
@@ -107,7 +108,9 @@ const scenarios = [
 ];
 
 export default function AICallSimulator() {
-  const [scenario, setScenario] = useState(scenarios[0]);
+  const [scenarios, setScenarios] = useState(fallbackScenarios);
+const [scenario, setScenario] = useState(fallbackScenarios[0]);
+const [scenarioSource, setScenarioSource] = useState("fallback");
   const [answered, setAnswered] = useState(false);
   const [completed, setCompleted] = useState(0);
   const [reply, setReply] = useState("");
@@ -119,6 +122,42 @@ export default function AICallSimulator() {
   const [trainerEmail, setTrainerEmail] = useState("");
   const [trainerPassword, setTrainerPassword] = useState("");
 
+  useEffect(() => {
+  async function loadScenarios() {
+    const { data, error } = await supabase
+      .from("scenarios")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      console.error("Unable to load scenarios from Supabase:", error);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.warn("No active Supabase scenarios found. Using fallback scenarios.");
+      return;
+    }
+
+    const loadedScenarios = data.map((item) => ({
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      checklistType: item.checklist_type,
+      summary: item.summary,
+      description: item.description,
+      caller: item.caller,
+      opening: item.opening,
+    }));
+
+    setScenarios(loadedScenarios);
+    setScenario(loadedScenarios[0]);
+    setScenarioSource("supabase");
+  }
+
+  loadScenarios();
+}, []);
   const chooseScenario = (item) => {
     setScenario(item);
     setAnswered(false);
@@ -633,6 +672,9 @@ export default function AICallSimulator() {
 
                 <span className="text-[10px] font-semibold text-[#5c7c6e]">
                   {scenarios.length} available
+                  <span className="ml-2 text-[10px] font-semibold text-[#326653]">
+  {scenarioSource === "supabase" ? "• Database connected" : "• Local fallback"}
+</span>
                 </span>
               </div>
 
