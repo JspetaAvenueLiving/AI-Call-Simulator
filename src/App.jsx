@@ -25,7 +25,7 @@ const fallbackScenarios = [
     id: 2,
     title: "Prospect Inquiry",
     subtitle: "Prospect",
-    checklistType: "prospect",
+    Type: "prospect",
     summary: "Asking about available suites and rental options.",
     description:
       "A prospective resident is exploring rental options and wants help understanding availability, suite choices, and next steps.",
@@ -111,6 +111,8 @@ export default function AICallSimulator() {
   const [scenarios, setScenarios] = useState(fallbackScenarios);
 const [scenario, setScenario] = useState(fallbackScenarios[0]);
 const [scenarioSource, setScenarioSource] = useState("fallback");
+  const [databaseChecklists, setDatabaseChecklists] = useState({});
+const [checklistSource, setChecklistSource] = useState("fallback");
   const [answered, setAnswered] = useState(false);
   const [completed, setCompleted] = useState(0);
   const [reply, setReply] = useState("");
