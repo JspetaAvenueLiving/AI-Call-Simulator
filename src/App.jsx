@@ -162,6 +162,56 @@ const [checklistSource, setChecklistSource] = useState("fallback");
 
   loadScenarios();
 }, []);
+
+  useEffect(() => {
+  async function loadChecklists() {
+    const { data, error } = await supabase
+      .from("checklist_items")
+      .select("id, checklist_type, label, keywords, sort_order")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      console.error(
+        "Unable to load checklists from Supabase:",
+        error
+      );
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.warn(
+        "No checklist items returned from Supabase. Using local fallback."
+      );
+      return;
+    }
+
+    const grouped = data.reduce((result, item) => {
+      if (!result[item.checklist_type]) {
+        result[item.checklist_type] = [];
+      }
+
+      result[item.checklist_type].push({
+        id: item.id,
+        label: item.label,
+        keywords: item.keywords || [],
+        sortOrder: item.sort_order,
+      });
+
+      return result;
+    }, {});
+
+    console.log(
+      "Checklist data loaded from Supabase:",
+      grouped
+    );
+
+    setDatabaseChecklists(grouped);
+    setChecklistSource("supabase");
+  }
+
+  loadChecklists();
+}, []);
   const chooseScenario = (item) => {
     setScenario(item);
     setAnswered(false);
