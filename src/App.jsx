@@ -565,12 +565,25 @@ const [checklistSource, setChecklistSource] = useState("fallback");
     },
   ];
 
-  const checklist =
-    scenario.checklistType === "maintenance"
-      ? maintenanceChecklist
-      : scenario.checklistType === "prospect"
-      ? prospectChecklist
-      : memoChecklist;
+  const fallbackChecklist =
+  scenario.checklistType === "maintenance"
+    ? maintenanceChecklist
+    : scenario.checklistType === "prospect"
+    ? prospectChecklist
+    : memoChecklist;
+
+const databaseChecklist =
+  databaseChecklists[scenario.checklistType] || [];
+
+const checklist =
+  checklistSource === "supabase" && databaseChecklist.length > 0
+    ? databaseChecklist.map((item) => ({
+        label: item.label,
+        hit: (item.keywords || []).some((keyword) =>
+          transcript.includes(String(keyword).toLowerCase())
+        ),
+      }))
+    : fallbackChecklist;
 
   return (
     <div className="min-h-screen bg-[#eef3ed] text-[#29443c]">
