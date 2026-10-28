@@ -685,6 +685,14 @@ const [checklistSource, setChecklistSource] = useState("fallback");
         ? "Database connected"
         : "Local fallback"}
     </div>
+
+    <div className="text-[9px] font-semibold text-[#326653]">
+  {checklistSource === "supabase"
+    ? `Checklists connected (${
+        Object.values(databaseChecklists).flat().length
+      })`
+    : "Checklist fallback"}
+</div>
   </div>
 </div>
               <div className="max-h-[455px] space-y-1.5 overflow-y-auto pr-1">
