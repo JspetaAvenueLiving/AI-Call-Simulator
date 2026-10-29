@@ -142,6 +142,18 @@ const [savingChecklistItem, setSavingChecklistItem] = useState(false);
 });
 const [employeeReady, setEmployeeReady] = useState(false);
 const [employeeError, setEmployeeError] = useState("");
+
+  const handleStartTraining = (event) => {
+  event.preventDefault();
+
+  if (!employee.name.trim()) {
+    setEmployeeError("Please enter your name to begin.");
+    return;
+  }
+
+  setEmployeeError("");
+  setEmployeeReady(true);
+};
 const [trainerLoginError, setTrainerLoginError] = useState("");
 const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
   const [trainerScenarioForm, setTrainerScenarioForm] = useState({
@@ -858,18 +870,6 @@ const handleMoveChecklistItem = async (item, direction) => {
 };
   
   const chooseScenario = (item) => {
-    
-    const handleStartTraining = (event) => {
-  event.preventDefault();
-
-  if (!employee.name.trim()) {
-    setEmployeeError("Please enter your name to begin.");
-    return;
-  }
-
-  setEmployeeError("");
-  setEmployeeReady(true);
-};
     
     setScenario(item);
     setAnswered(false);
