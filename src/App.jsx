@@ -256,6 +256,9 @@ const endCall = () => {
       return previous;
     }
 
+    return [...previous, scenario.id];
+  });
+};
     const completedCount = completedScenarioIds.length;
 const totalScenarioCount = scenarios.length;
 
