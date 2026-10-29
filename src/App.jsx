@@ -398,49 +398,84 @@ const loadTrainerScenarios = async () => {
     caller: data.caller,
     opening: data.opening,
   };
-    const handleToggleScenarioActive = async (item) => {
+const handleToggleScenarioActive = async (item) => {
+  setTrainerScenarioMessage("");
+
   const newStatus = !item.is_active;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("scenarios")
     .update({
       is_active: newStatus,
     })
-    .eq("id", item.id);
+    .eq("id", item.id)
+    .select()
+    .single();
 
   if (error) {
-    console.error("Unable to update scenario status:", error);
-    setTrainerScenarioMessage(
-      "The scenario status could not be updated."
+    console.error(
+      "Unable to update scenario status:",
+      error
     );
+
+    setTrainerScenarioMessage(
+      `Unable to ${
+        newStatus ? "activate" : "deactivate"
+      } "${item.title}".`
+    );
+
     return;
+  }
+
+  await loadTrainerScenarios();
+
+  if (newStatus) {
+    const restoredScenario = {
+      id: data.id,
+      title: data.title,
+      subtitle: data.subtitle,
+      checklistType: data.checklist_type,
+      summary: data.summary,
+      description: data.description,
+      caller: data.caller,
+      opening: data.opening,
+    };
+
+    setScenarios((previous) => [
+      ...previous.filter(
+        (scenarioItem) =>
+          scenarioItem.id !== restoredScenario.id
+      ),
+      restoredScenario,
+    ]);
+  } else {
+    setScenarios((previous) =>
+      previous.filter(
+        (scenarioItem) =>
+          scenarioItem.id !== item.id
+      )
+    );
+
+    if (scenario.id === item.id) {
+      const remainingScenarios = scenarios.filter(
+        (scenarioItem) =>
+          scenarioItem.id !== item.id
+      );
+
+      if (remainingScenarios.length > 0) {
+        setScenario(remainingScenarios[0]);
+      }
+    }
   }
 
   setTrainerScenarioMessage(
     newStatus
-      ? "Scenario activated."
-      : "Scenario deactivated."
+      ? `"${item.title}" activated successfully.`
+      : `"${item.title}" deactivated successfully.`
   );
+};
 
-  await loadTrainerScenarios();
-
-  if (!newStatus) {
-    setScenarios((previous) =>
-      previous.filter((scenarioItem) => scenarioItem.id !== item.id)
-    );
-  } else {
-    const restoredScenario = {
-      id: item.id,
-      title: item.title,
-      subtitle: item.subtitle,
-      checklistType: item.checklist_type,
-      summary: item.summary,
-      description: item.description,
-      caller: item.caller,
-      opening: item.opening,
-    };
-
-    const handleEditScenario = (item) => {
+   const handleEditScenario = (item) => {
   setEditingScenarioId(item.id);
 
   setTrainerScenarioForm({
@@ -453,7 +488,9 @@ const loadTrainerScenarios = async () => {
     opening: item.opening || "",
   });
 
-  setTrainerScenarioMessage("");
+  setTrainerScenarioMessage(
+    `Editing "${item.title}". Make your changes and select Save Changes.`
+  );
 };
 
     const handleDuplicateScenario = (item) => {
