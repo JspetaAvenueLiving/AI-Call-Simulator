@@ -454,6 +454,79 @@ const [editingScenarioId, setEditingScenarioId] = useState(null);
   );
 };
 
+    const handleDeleteScenario = async (item) => {
+  const firstConfirmation = window.confirm(
+    `Permanently delete "${item.title}"? This action cannot be undone.`
+  );
+
+  if (!firstConfirmation) {
+    return;
+  }
+
+  const secondConfirmation = window.confirm(
+    "Are you completely sure? Deactivating the scenario is recommended instead of permanent deletion."
+  );
+
+  if (!secondConfirmation) {
+    return;
+  }
+
+  setTrainerScenarioMessage("");
+
+  const { error } = await supabase
+    .from("scenarios")
+    .delete()
+    .eq("id", item.id);
+
+  if (error) {
+    console.error("Unable to delete scenario:", error);
+
+    setTrainerScenarioMessage(
+      "The scenario could not be deleted."
+    );
+
+    return;
+  }
+
+  setScenarios((previous) =>
+    previous.filter(
+      (scenarioItem) => scenarioItem.id !== item.id
+    )
+  );
+
+  setCompletedScenarioIds((previous) =>
+    previous.filter(
+      (scenarioId) => scenarioId !== item.id
+    )
+  );
+
+  setScenarioScores((previous) => {
+    const updatedScores = { ...previous };
+    delete updatedScores[item.id];
+    return updatedScores;
+  });
+
+  if (editingScenarioId === item.id) {
+    setEditingScenarioId(null);
+
+    setTrainerScenarioForm({
+      title: "",
+      subtitle: "Resident",
+      checklistType: "maintenance",
+      summary: "",
+      description: "",
+      caller: "",
+      opening: "",
+    });
+  }
+
+  await loadTrainerScenarios();
+
+  setTrainerScenarioMessage(
+    "Scenario permanently deleted."
+  );
+};
+
     setScenarios((previous) => [
       ...previous.filter(
         (scenarioItem) => scenarioItem.id !== item.id
@@ -1233,6 +1306,15 @@ const checklistTotal = checklist.length;
   >
     {item.is_active ? "Deactivate" : "Activate"}
   </button>
+            {!item.is_active && (
+  <button
+    type="button"
+    onClick={() => handleDeleteScenario(item)}
+    className="rounded-lg border border-[#d9aaa0] bg-[#fbefed] px-2.5 py-1.5 text-[11px] font-semibold text-[#9a5145] hover:bg-[#f6dfdb]"
+  >
+    Delete
+  </button>
+)}
 </div>
         </div>
       ))}
