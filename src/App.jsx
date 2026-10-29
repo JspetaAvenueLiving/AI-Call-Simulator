@@ -139,7 +139,11 @@ const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
 
 const [trainerScenarioMessage, setTrainerScenarioMessage] = useState("");
 const [trainerSavingScenario, setTrainerSavingScenario] = useState(false);
-
+  
+const [trainerScenarios, setTrainerScenarios] = useState([]);
+const [trainerScenarioFilter, setTrainerScenarioFilter] = useState("all");
+const [editingScenarioId, setEditingScenarioId] = useState(null);
+  
   useEffect(() => {
   async function loadScenarios() {
     const { data, error } = await supabase
@@ -226,6 +230,19 @@ const [trainerSavingScenario, setTrainerSavingScenario] = useState(false);
 
   loadChecklists();
 }, []);
+  const loadTrainerScenarios = async () => {
+  const { data, error } = await supabase
+    .from("scenarios")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("Unable to load trainer scenarios:", error);
+    return;
+  }
+
+  setTrainerScenarios(data || []);
+};
   const handleTrainerLogin = async (event) => {
   event.preventDefault();
 
@@ -244,6 +261,7 @@ const [trainerSavingScenario, setTrainerSavingScenario] = useState(false);
   }
 
   setTrainerAuthenticated(true);
+    await loadTrainerScenarios();
   setTrainerLoggingIn(false);
   setTrainerPassword("");
 };
@@ -328,6 +346,8 @@ const [trainerSavingScenario, setTrainerSavingScenario] = useState(false);
     opening: "",
   });
 
+    await loadTrainerScenarios();
+    
   setTrainerScenarioMessage(
     "Scenario created successfully."
   );
