@@ -330,6 +330,56 @@ const [editingScenarioId, setEditingScenarioId] = useState(null);
     caller: data.caller,
     opening: data.opening,
   };
+    const handleToggleScenarioActive = async (item) => {
+  const newStatus = !item.is_active;
+
+  const { error } = await supabase
+    .from("scenarios")
+    .update({
+      is_active: newStatus,
+    })
+    .eq("id", item.id);
+
+  if (error) {
+    console.error("Unable to update scenario status:", error);
+    setTrainerScenarioMessage(
+      "The scenario status could not be updated."
+    );
+    return;
+  }
+
+  setTrainerScenarioMessage(
+    newStatus
+      ? "Scenario activated."
+      : "Scenario deactivated."
+  );
+
+  await loadTrainerScenarios();
+
+  if (!newStatus) {
+    setScenarios((previous) =>
+      previous.filter((scenarioItem) => scenarioItem.id !== item.id)
+    );
+  } else {
+    const restoredScenario = {
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      checklistType: item.checklist_type,
+      summary: item.summary,
+      description: item.description,
+      caller: item.caller,
+      opening: item.opening,
+    };
+
+    setScenarios((previous) => [
+      ...previous.filter(
+        (scenarioItem) => scenarioItem.id !== item.id
+      ),
+      restoredScenario,
+    ]);
+  }
+};
 
   setScenarios((previous) => [
     ...previous,
@@ -401,7 +451,18 @@ const endCall = () => {
     return [...previous, scenario.id];
   });
 };
+const filteredTrainerScenarios = trainerScenarios.filter((item) => {
+  if (trainerScenarioFilter === "inactive") {
+    return !item.is_active;
+  }
 
+  if (trainerScenarioFilter === "all") {
+    return true;
+  }
+
+  return item.checklist_type === trainerScenarioFilter;
+});
+  
 const completedCount = completedScenarioIds.length;
 const totalScenarioCount = scenarios.length;
 
@@ -915,6 +976,50 @@ const checklistTotal = checklist.length;
             <p className="mt-2 text-xs font-medium text-[#557469]">
               Signed in as {trainerEmail}
             </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <div className="rounded-xl border border-[#b7ccc1] bg-white p-3">
+    <div className="text-2xl font-semibold text-[#285749]">
+      {trainerScenarios.length}
+    </div>
+    <div className="mt-1 text-xs font-medium text-[#667d73]">
+      Total Scenarios
+    </div>
+  </div>
+
+  <div className="rounded-xl border border-[#b7ccc1] bg-white p-3">
+    <div className="text-2xl font-semibold text-[#285749]">
+      {trainerScenarios.filter(
+        (item) => item.checklist_type === "maintenance"
+      ).length}
+    </div>
+    <div className="mt-1 text-xs font-medium text-[#667d73]">
+      Maintenance
+    </div>
+  </div>
+
+  <div className="rounded-xl border border-[#b7ccc1] bg-white p-3">
+    <div className="text-2xl font-semibold text-[#285749]">
+      {trainerScenarios.filter(
+        (item) => item.checklist_type === "memo"
+      ).length}
+    </div>
+    <div className="mt-1 text-xs font-medium text-[#667d73]">
+      Memo Required
+    </div>
+  </div>
+
+  <div className="rounded-xl border border-[#b7ccc1] bg-white p-3">
+    <div className="text-2xl font-semibold text-[#285749]">
+      {trainerScenarios.filter(
+        (item) => item.checklist_type === "prospect"
+      ).length}
+    </div>
+    <div className="mt-1 text-xs font-medium text-[#667d73]">
+      Prospect
+    </div>
+  </div>
+</div>
           </div>
 
           <button
@@ -934,6 +1039,29 @@ const checklistTotal = checklist.length;
           Scenarios
         </h3>
 
+        <div className="mt-3 flex flex-wrap gap-2">
+  {[
+    ["all", "All"],
+    ["maintenance", "Maintenance"],
+    ["memo", "Memo Required"],
+    ["prospect", "Prospect"],
+    ["inactive", "Inactive"],
+  ].map(([value, label]) => (
+    <button
+      key={value}
+      type="button"
+      onClick={() => setTrainerScenarioFilter(value)}
+      className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${
+        trainerScenarioFilter === value
+          ? "border-[#326653] bg-[#326653] text-white"
+          : "border-[#b7ccc1] bg-white text-[#326653]"
+      }`}
+    >
+      {label}
+    </button>
+  ))}
+</div>
+
         <p className="mt-1 text-xs text-[#667d73]">
           {scenarios.length} scenarios available
         </p>
@@ -941,7 +1069,7 @@ const checklistTotal = checklist.length;
     </div>
 
     <div className="mt-4 max-h-[520px] space-y-2 overflow-y-auto pr-1">
-      {scenarios.map((item) => (
+      {filteredTrainerScenarios.map((item) => (
         <div
           key={item.id}
           className="rounded-lg border border-[#c7d8cf] bg-white p-3"
@@ -961,6 +1089,28 @@ const checklistTotal = checklist.length;
           <p className="mt-2 text-xs leading-5 text-[#667d73]">
             {item.summary}
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <div
+  className={`mt-2 text-[10px] font-semibold ${
+    item.is_active
+      ? "text-[#326653]"
+      : "text-[#8b6147]"
+  }`}
+>
+  {item.is_active ? "Active" : "Inactive"}
+</div>
+  <button
+    type="button"
+    onClick={() => handleToggleScenarioActive(item)}
+    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold ${
+      item.is_active
+        ? "border-[#d4b69f] bg-[#fbf3ec] text-[#8b6147]"
+        : "border-[#9bc0ac] bg-[#e7f2eb] text-[#285c4b]"
+    }`}
+  >
+    {item.is_active ? "Deactivate" : "Activate"}
+  </button>
+</div>
         </div>
       ))}
     </div>
