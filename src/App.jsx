@@ -127,7 +127,18 @@ const [checklistSource, setChecklistSource] = useState("fallback");
 const [trainerAuthenticated, setTrainerAuthenticated] = useState(false);
 const [trainerLoginError, setTrainerLoginError] = useState("");
 const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
-  
+  const [trainerScenarioForm, setTrainerScenarioForm] = useState({
+  title: "",
+  subtitle: "Resident",
+  checklistType: "maintenance",
+  summary: "",
+  description: "",
+  caller: "",
+  opening: "",
+});
+
+const [trainerScenarioMessage, setTrainerScenarioMessage] = useState("");
+const [trainerSavingScenario, setTrainerSavingScenario] = useState(false);
 
   useEffect(() => {
   async function loadScenarios() {
@@ -244,6 +255,84 @@ const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
   setTrainerEmail("");
   setTrainerPassword("");
   setTrainerLoginError("");
+};
+  const handleCreateScenario = async (event) => {
+  event.preventDefault();
+
+  setTrainerScenarioMessage("");
+
+  if (
+    !trainerScenarioForm.title.trim() ||
+    !trainerScenarioForm.summary.trim() ||
+    !trainerScenarioForm.caller.trim() ||
+    !trainerScenarioForm.opening.trim()
+  ) {
+    setTrainerScenarioMessage(
+      "Please complete all required scenario fields."
+    );
+    return;
+  }
+
+  setTrainerSavingScenario(true);
+
+  const { data, error } = await supabase
+    .from("scenarios")
+    .insert({
+      title: trainerScenarioForm.title.trim(),
+      subtitle: trainerScenarioForm.subtitle,
+      checklist_type: trainerScenarioForm.checklistType,
+      summary: trainerScenarioForm.summary.trim(),
+      description:
+        trainerScenarioForm.description.trim() ||
+        trainerScenarioForm.summary.trim(),
+      caller: trainerScenarioForm.caller.trim(),
+      opening: trainerScenarioForm.opening.trim(),
+      is_active: true,
+      sort_order: scenarios.length + 1,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Unable to create scenario:", error);
+    setTrainerScenarioMessage(
+      "The scenario could not be created."
+    );
+    setTrainerSavingScenario(false);
+    return;
+  }
+
+  const createdScenario = {
+    id: data.id,
+    title: data.title,
+    subtitle: data.subtitle,
+    checklistType: data.checklist_type,
+    summary: data.summary,
+    description: data.description,
+    caller: data.caller,
+    opening: data.opening,
+  };
+
+  setScenarios((previous) => [
+    ...previous,
+    createdScenario,
+  ]);
+
+  setTrainerScenarioForm({
+    title: "",
+    subtitle: "Resident",
+    checklistType: "maintenance",
+    summary: "",
+    description: "",
+    caller: "",
+    opening: "",
+  });
+
+  setTrainerScenarioMessage(
+    "Scenario created successfully."
+  );
+
+  setTrainerSavingScenario(false);
 };
   const chooseScenario = (item) => {
     setScenario(item);
@@ -817,15 +906,221 @@ const checklistTotal = checklist.length;
           </button>
         </div>
 
-        <div className="mt-6 rounded-xl border border-[#c7d8cf] bg-[#f3f7f4] p-5">
-          <h3 className="text-base font-semibold text-[#285749]">
-            Scenario Manager
-          </h3>
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+  <div className="rounded-xl border border-[#c7d8cf] bg-[#f3f7f4] p-4">
+    <div className="flex items-center justify-between">
+      <div>
+        <h3 className="text-base font-semibold text-[#285749]">
+          Scenarios
+        </h3>
 
-          <p className="mt-1 text-sm text-[#667d73]">
-            Scenario creation and editing controls will appear here.
+        <p className="mt-1 text-xs text-[#667d73]">
+          {scenarios.length} scenarios available
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-4 max-h-[520px] space-y-2 overflow-y-auto pr-1">
+      {scenarios.map((item) => (
+        <div
+          key={item.id}
+          className="rounded-lg border border-[#c7d8cf] bg-white p-3"
+        >
+          <div className="text-sm font-semibold text-[#285749]">
+            {item.title}
+          </div>
+
+          <div className="mt-1 text-xs font-medium text-[#5c7c6e]">
+            {item.subtitle}
+          </div>
+
+          <div className="mt-1 text-[11px] text-[#6b8178]">
+            Checklist: {item.checklistType}
+          </div>
+
+          <p className="mt-2 text-xs leading-5 text-[#667d73]">
+            {item.summary}
           </p>
         </div>
+      ))}
+    </div>
+  </div>
+
+  <div className="rounded-xl border-2 border-[#3b735d] bg-white p-4">
+    <h3 className="text-base font-semibold text-[#285749]">
+      Add Scenario
+    </h3>
+
+    <p className="mt-1 text-xs text-[#667d73]">
+      Create a new trainee practice scenario.
+    </p>
+
+    <form
+      onSubmit={handleCreateScenario}
+      className="mt-4 space-y-3"
+    >
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+          Scenario title *
+        </label>
+
+        <input
+          value={trainerScenarioForm.title}
+          onChange={(event) =>
+            setTrainerScenarioForm({
+              ...trainerScenarioForm,
+              title: event.target.value,
+            })
+          }
+          placeholder="Example: Heating Concern"
+          className="w-full rounded-lg border border-[#b7ccc1] px-3 py-2 text-sm text-[#285c4b] outline-none focus:border-[#3b735d]"
+        />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+            Caller type
+          </label>
+
+          <select
+            value={trainerScenarioForm.subtitle}
+            onChange={(event) =>
+              setTrainerScenarioForm({
+                ...trainerScenarioForm,
+                subtitle: event.target.value,
+              })
+            }
+            className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2 text-sm text-[#285c4b]"
+          >
+            <option value="Resident">Resident</option>
+            <option value="New Resident">
+              New Resident
+            </option>
+            <option value="Prospect">Prospect</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+            Checklist
+          </label>
+
+          <select
+            value={trainerScenarioForm.checklistType}
+            onChange={(event) =>
+              setTrainerScenarioForm({
+                ...trainerScenarioForm,
+                checklistType: event.target.value,
+              })
+            }
+            className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2 text-sm text-[#285c4b]"
+          >
+            <option value="maintenance">
+              Resident - Maintenance
+            </option>
+
+            <option value="memo">
+              Resident - Memo required
+            </option>
+
+            <option value="prospect">
+              Prospect
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+          Short summary *
+        </label>
+
+        <input
+          value={trainerScenarioForm.summary}
+          onChange={(event) =>
+            setTrainerScenarioForm({
+              ...trainerScenarioForm,
+              summary: event.target.value,
+            })
+          }
+          placeholder="5-10 word reason for the call"
+          className="w-full rounded-lg border border-[#b7ccc1] px-3 py-2 text-sm text-[#285c4b] outline-none focus:border-[#3b735d]"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+          Trainee briefing
+        </label>
+
+        <textarea
+          value={trainerScenarioForm.description}
+          onChange={(event) =>
+            setTrainerScenarioForm({
+              ...trainerScenarioForm,
+              description: event.target.value,
+            })
+          }
+          placeholder="Describe the situation shown before the call starts."
+          className="min-h-[80px] w-full resize-none rounded-lg border border-[#b7ccc1] px-3 py-2 text-sm text-[#285c4b] outline-none focus:border-[#3b735d]"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+          Fictional caller name *
+        </label>
+
+        <input
+          value={trainerScenarioForm.caller}
+          onChange={(event) =>
+            setTrainerScenarioForm({
+              ...trainerScenarioForm,
+              caller: event.target.value,
+            })
+          }
+          placeholder="Example: Jordan M."
+          className="w-full rounded-lg border border-[#b7ccc1] px-3 py-2 text-sm text-[#285c4b] outline-none focus:border-[#3b735d]"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+          Caller opening statement *
+        </label>
+
+        <textarea
+          value={trainerScenarioForm.opening}
+          onChange={(event) =>
+            setTrainerScenarioForm({
+              ...trainerScenarioForm,
+              opening: event.target.value,
+            })
+          }
+          placeholder="Enter what the caller says when the interaction begins."
+          className="min-h-[90px] w-full resize-none rounded-lg border border-[#b7ccc1] px-3 py-2 text-sm text-[#285c4b] outline-none focus:border-[#3b735d]"
+        />
+      </div>
+
+      {trainerScenarioMessage && (
+        <div className="rounded-lg bg-[#edf4ef] px-3 py-2 text-xs font-semibold text-[#326653]">
+          {trainerScenarioMessage}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={trainerSavingScenario}
+        className="w-full rounded-lg bg-[#326b55] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#285b48] disabled:opacity-50"
+      >
+        {trainerSavingScenario
+          ? "Creating scenario..."
+          : "Create scenario"}
+      </button>
+    </form>
+  </div>
+</div>
 
         <button
           type="button"
