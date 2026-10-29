@@ -603,6 +603,24 @@ const checklist =
 
 const checklistScore = checklist.filter((item) => item.hit).length;
 const checklistTotal = checklist.length;
+
+  const saveBestScore = () => {
+  setScenarioScores((previous) => {
+    const existing = previous[scenario.id];
+
+    if (!existing || checklistScore > existing.score) {
+      return {
+        ...previous,
+        [scenario.id]: {
+          score: checklistScore,
+          total: checklistTotal,
+        },
+      };
+    }
+
+    return previous;
+  });
+};
   checklistSource === "supabase" && databaseChecklist.length > 0
     ? databaseChecklist.map((item) => ({
         label: item.label,
@@ -797,9 +815,17 @@ const checklistTotal = checklist.length;
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
+  <div className="flex items-center justify-between gap-2">
   <div className="text-xs font-semibold text-[#285749]">
     {item.title}
   </div>
+
+  {completedScenarioIds.includes(item.id) && (
+    <span className="whitespace-nowrap rounded-full bg-[#39705a] px-2 py-0.5 text-[9px] font-semibold text-white">
+      Completed
+    </span>
+  )}
+</div>
 
   {completedScenarioIds.includes(item.id) && (
     <span className="rounded-full bg-[#39705a] px-2 py-0.5 text-[9px] font-semibold text-white">
@@ -813,6 +839,12 @@ const checklistTotal = checklist.length;
                     <p className="mt-1 text-[11px] leading-4 text-[#697a73]">
                       {item.summary}
                     </p>
+
+                    {scenarioScores[item.id] && (
+  <div className="mt-1 text-[10px] font-semibold text-[#326653]">
+    Best: {scenarioScores[item.id].score}/{scenarioScores[item.id].total}
+  </div>
+)}
                   </button>
                 ))}
               </div>
@@ -887,11 +919,12 @@ const checklistTotal = checklist.length;
                   </div>
 
                   <button
-                    onClick={() => {
-                      setShowResults(false);
-                      setLastMessages([]);
-                      setMessages([]);
-                    }}
+                   onClick={() => {
+  saveBestScore();
+  setShowResults(false);
+  setLastMessages([]);
+  setMessages([]);
+}}
                     className="mt-4 rounded-lg bg-[#326b55] px-4 py-2 text-sm font-semibold text-white hover:bg-[#285b48]"
                   >
                     Return to scenarios
