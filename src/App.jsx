@@ -880,6 +880,10 @@ const checklistTotal = checklist.length;
   Score: {checklistScore}/{checklistTotal}
 </div>
 
+                  <div className="mt-2 text-xs font-medium text-[#5c746a]">
+  {checklistScore} criteria completed · {checklistTotal - checklistScore} opportunities
+</div>
+
                   <p className="mt-3 text-sm text-[#657a71]">
                     Criteria detected from your responses during this
                     practice call.
@@ -929,6 +933,19 @@ const checklistTotal = checklist.length;
                   >
                     Return to scenarios
                   </button>
+                  <button
+  onClick={() => {
+    saveBestScore();
+    setShowResults(false);
+    setLastMessages([]);
+    setMessages([]);
+    setReply("");
+    setAnswered(true);
+  }}
+  className="ml-2 rounded-lg border-2 border-[#3b735d] bg-white px-4 py-2 text-sm font-semibold text-[#285c4b] hover:bg-[#e7f1eb]"
+>
+  Retry scenario
+</button>
                 </div>
               ) : !answered ? (
                 <div className="flex flex-col items-center justify-center px-5 py-10 text-center">
