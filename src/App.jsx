@@ -230,16 +230,36 @@ const [editingScenarioId, setEditingScenarioId] = useState(null);
 
   loadChecklists();
 }, []);
-  const loadTrainerScenarios = async () => {
+  
+  useEffect(() => {
+  if (trainerAuthenticated) {
+    loadTrainerScenarios();
+  }
+}, [trainerAuthenticated]);
+  
+const loadTrainerScenarios = async () => {
   const { data, error } = await supabase
     .from("scenarios")
     .select("*")
     .order("sort_order", { ascending: true });
 
   if (error) {
-    console.error("Unable to load trainer scenarios:", error);
+    console.error(
+      "Unable to load trainer scenarios:",
+      error
+    );
+
+    setTrainerScenarioMessage(
+      "Unable to load scenarios for the Trainer Portal."
+    );
+
     return;
   }
+
+  console.log(
+    "Trainer scenarios loaded:",
+    data
+  );
 
   setTrainerScenarios(data || []);
 };
@@ -1242,7 +1262,7 @@ const checklistTotal = checklist.length;
 </div>
 
         <p className="mt-1 text-xs text-[#667d73]">
-          {scenarios.length} scenarios available
+{trainerScenarios.length} scenarios available
         </p>
       </div>
     </div>
