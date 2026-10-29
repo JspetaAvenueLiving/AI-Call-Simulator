@@ -125,6 +125,7 @@ const [checklistSource, setChecklistSource] = useState("fallback");
   const [trainerEmail, setTrainerEmail] = useState("");
   const [trainerPassword, setTrainerPassword] = useState("");
 const [trainerAuthenticated, setTrainerAuthenticated] = useState(false);
+  const [trainerTab, setTrainerTab] = useState("scenarios");
 const [trainerLoginError, setTrainerLoginError] = useState("");
 const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
   const [trainerScenarioForm, setTrainerScenarioForm] = useState({
@@ -1295,6 +1296,45 @@ const checklistTotal = checklist.length;
           </button>
         </div>
 
+        <div className="mt-6 flex flex-wrap gap-2 border-b border-[#c7d8cf] pb-3">
+  <button
+    type="button"
+    onClick={() => setTrainerTab("scenarios")}
+    className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+      trainerTab === "scenarios"
+        ? "bg-[#326653] text-white"
+        : "border border-[#b7ccc1] bg-white text-[#326653] hover:bg-[#edf4ef]"
+    }`}
+  >
+    Scenario Manager
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setTrainerTab("checklists")}
+    className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+      trainerTab === "checklists"
+        ? "bg-[#326653] text-white"
+        : "border border-[#b7ccc1] bg-white text-[#326653] hover:bg-[#edf4ef]"
+    }`}
+  >
+    Checklist Editor
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setTrainerTab("results")}
+    className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+      trainerTab === "results"
+        ? "bg-[#326653] text-white"
+        : "border border-[#b7ccc1] bg-white text-[#326653] hover:bg-[#edf4ef]"
+    }`}
+  >
+    Employee Results
+  </button>
+</div>
+
+        {trainerTab === "scenarios" && (
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
   <div className="rounded-xl border border-[#c7d8cf] bg-[#f3f7f4] p-4">
     <div className="flex items-center justify-between">
@@ -1583,6 +1623,43 @@ const checklistTotal = checklist.length;
     </form>
   </div>
 </div>
+        )}
+
+        {trainerTab === "checklists" && (
+  <div className="mt-6 rounded-xl border-2 border-[#3b735d] bg-white p-5">
+    <h3 className="text-lg font-semibold text-[#285749]">
+      Checklist Editor
+    </h3>
+
+    <p className="mt-1 text-sm text-[#667d73]">
+      Manage Maintenance, Memo Required, and Prospect checklist criteria.
+    </p>
+
+    <div className="mt-5 rounded-lg border border-[#c7d8cf] bg-[#f3f7f4] p-4">
+      <p className="text-sm font-semibold text-[#326653]">
+        Checklist management controls will be added here next.
+      </p>
+    </div>
+  </div>
+)}
+
+        {trainerTab === "results" && (
+  <div className="mt-6 rounded-xl border-2 border-[#3b735d] bg-white p-5">
+    <h3 className="text-lg font-semibold text-[#285749]">
+      Employee Results
+    </h3>
+
+    <p className="mt-1 text-sm text-[#667d73]">
+      Review trainee attempts, scenario scores, and completed checklist criteria.
+    </p>
+
+    <div className="mt-5 rounded-lg border border-[#c7d8cf] bg-[#f3f7f4] p-4">
+      <p className="text-sm font-semibold text-[#326653]">
+        Employee training results will be displayed here.
+      </p>
+    </div>
+  </div>
+)}
 
         <button
           type="button"
