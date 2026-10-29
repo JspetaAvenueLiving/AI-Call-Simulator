@@ -436,6 +436,24 @@ const [editingScenarioId, setEditingScenarioId] = useState(null);
   setTrainerScenarioMessage("");
 };
 
+    const handleDuplicateScenario = (item) => {
+  setEditingScenarioId(null);
+
+  setTrainerScenarioForm({
+    title: `${item.title} - Copy`,
+    subtitle: item.subtitle || "Resident",
+    checklistType: item.checklist_type || "maintenance",
+    summary: item.summary || "",
+    description: item.description || "",
+    caller: item.caller || "",
+    opening: item.opening || "",
+  });
+
+  setTrainerScenarioMessage(
+    "Scenario copied into the form. Make any changes, then select Create Scenario."
+  );
+};
+
     setScenarios((previous) => [
       ...previous.filter(
         (scenarioItem) => scenarioItem.id !== item.id
@@ -1194,6 +1212,14 @@ const checklistTotal = checklist.length;
   className="rounded-lg border border-[#9bb7ab] bg-[#edf4ef] px-2.5 py-1.5 text-[11px] font-semibold text-[#285c4b]"
 >
   Edit
+</button>
+
+            <button
+  type="button"
+  onClick={() => handleDuplicateScenario(item)}
+  className="rounded-lg border border-[#b7ccc1] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#326653] hover:bg-[#edf4ef]"
+>
+  Duplicate
 </button>
             
   <button
