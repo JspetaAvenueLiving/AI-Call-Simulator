@@ -114,7 +114,7 @@ const [scenarioSource, setScenarioSource] = useState("fallback");
   const [databaseChecklists, setDatabaseChecklists] = useState({});
 const [checklistSource, setChecklistSource] = useState("fallback");
   const [answered, setAnswered] = useState(false);
-  const [completed, setCompleted] = useState(0);
+  const [completedScenarioIds, setCompletedScenarioIds] = useState([]);
   const [reply, setReply] = useState("");
   const [messages, setMessages] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -245,13 +245,28 @@ const [checklistSource, setChecklistSource] = useState("fallback");
     setReply("");
   };
 
-  const endCall = () => {
-    setLastMessages(messages);
-    setAnswered(false);
-    setShowResults(true);
-    setReply("");
-    setCompleted((value) => Math.min(5, value + 1));
-  };
+const endCall = () => {
+  setLastMessages(messages);
+  setAnswered(false);
+  setShowResults(true);
+  setReply("");
+
+  setCompletedScenarioIds((previous) => {
+    if (previous.includes(scenario.id)) {
+      return previous;
+    }
+
+    const completedCount = completedScenarioIds.length;
+const totalScenarioCount = scenarios.length;
+
+const progressPercentage =
+  totalScenarioCount > 0
+    ? (completedCount / totalScenarioCount) * 100
+    : 0;
+
+    return [...previous, scenario.id];
+  });
+};
 
   const transcript = lastMessages
     .map((message) => String(message.text || "").toLowerCase())
@@ -576,6 +591,8 @@ const databaseChecklist =
   databaseChecklists[scenario.checklistType] || [];
 
 const checklist =
+  const checklistScore = checklist.filter((item) => item.hit).length;
+const checklistTotal = checklist.length;
   checklistSource === "supabase" && databaseChecklist.length > 0
     ? databaseChecklist.map((item) => ({
         label: item.label,
@@ -715,14 +732,14 @@ const checklist =
                   </div>
 
                   <span className="rounded-full border border-[#b9d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#326452]">
-                    {completed}/5
+                    {completedCount}/{totalScenarioCount}
                   </span>
                 </div>
 
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e5ece8]">
                   <div
                     className="h-full rounded-full bg-[#3b735d] transition-all"
-                    style={{ width: `${(completed / 5) * 100}%` }}
+                    style={{ width: `${progressPercentage}%` }}
                   />
                 </div>
               </div>
@@ -769,9 +786,17 @@ const checklist =
                         : "border-[#d4dfd8] bg-white hover:bg-[#edf4ef]"
                     }`}
                   >
-                    <div className="text-xs font-semibold text-[#285749]">
-                      {item.title}
-                    </div>
+                    <div className="flex items-center justify-between gap-2">
+  <div className="text-xs font-semibold text-[#285749]">
+    {item.title}
+  </div>
+
+  {completedScenarioIds.includes(item.id) && (
+    <span className="rounded-full bg-[#39705a] px-2 py-0.5 text-[9px] font-semibold text-white">
+      Completed
+    </span>
+  )}
+</div>
                     <div className="mt-0.5 text-[11px] font-medium text-[#5c7c6e]">
                       {item.subtitle}
                     </div>
@@ -805,11 +830,15 @@ const checklist =
                     Call complete
                   </span>
 
-                  <h2 className="mt-2 text-2xl font-semibold text-[#234b40]">
-                    Interaction checklist
-                  </h2>
+<h2 className="mt-2 text-2xl font-semibold text-[#234b40]">
+  Interaction checklist
+</h2>
 
-                  <p className="mt-1 text-sm text-[#657a71]">
+<div className="mt-2 inline-flex items-center rounded-full border border-[#9bc0ac] bg-[#e7f2eb] px-3 py-1.5 text-sm font-semibold text-[#285c4b]">
+  Score: {checklistScore}/{checklistTotal}
+</div>
+
+                  <p className="mt-3 text-sm text-[#657a71]">
                     Criteria detected from your responses during this
                     practice call.
                   </p>
