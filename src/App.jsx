@@ -313,54 +313,79 @@ const loadTrainerScenarios = async () => {
 
   setTrainerSavingScenario(true);
 
-    if (editingScenarioId) {
-  const { error } = await supabase
-    .from("scenarios")
-    .update({
-      title: trainerScenarioForm.title.trim(),
-      subtitle: trainerScenarioForm.subtitle,
-      checklist_type: trainerScenarioForm.checklistType,
-      summary: trainerScenarioForm.summary.trim(),
-      description:
-        trainerScenarioForm.description.trim() ||
-        trainerScenarioForm.summary.trim(),
-      caller: trainerScenarioForm.caller.trim(),
-      opening: trainerScenarioForm.opening.trim(),
-    })
-    .eq("id", editingScenarioId);
+  if (editingScenarioId) {
+    const { data, error } = await supabase
+      .from("scenarios")
+      .update({
+        title: trainerScenarioForm.title.trim(),
+        subtitle: trainerScenarioForm.subtitle,
+        checklist_type: trainerScenarioForm.checklistType,
+        summary: trainerScenarioForm.summary.trim(),
+        description:
+          trainerScenarioForm.description.trim() ||
+          trainerScenarioForm.summary.trim(),
+        caller: trainerScenarioForm.caller.trim(),
+        opening: trainerScenarioForm.opening.trim(),
+      })
+      .eq("id", editingScenarioId)
+      .select()
+      .single();
 
-  if (error) {
-    console.error("Unable to update scenario:", error);
-    setTrainerScenarioMessage(
-      "The scenario could not be updated."
+    if (error) {
+      console.error(
+        "Unable to update scenario:",
+        error
+      );
+
+      setTrainerScenarioMessage(
+        "The scenario could not be updated."
+      );
+
+      setTrainerSavingScenario(false);
+      return;
+    }
+
+    const updatedScenario = {
+      id: data.id,
+      title: data.title,
+      subtitle: data.subtitle,
+      checklistType: data.checklist_type,
+      summary: data.summary,
+      description: data.description,
+      caller: data.caller,
+      opening: data.opening,
+    };
+
+    setScenarios((previous) =>
+      previous.map((item) =>
+        item.id === updatedScenario.id
+          ? updatedScenario
+          : item
+      )
     );
+
+    setEditingScenarioId(null);
+
+    setTrainerScenarioForm({
+      title: "",
+      subtitle: "Resident",
+      checklistType: "maintenance",
+      summary: "",
+      description: "",
+      caller: "",
+      opening: "",
+    });
+
+    await loadTrainerScenarios();
+
+    setTrainerScenarioMessage(
+      "Scenario updated successfully."
+    );
+
     setTrainerSavingScenario(false);
     return;
   }
 
-  setEditingScenarioId(null);
-
-  setTrainerScenarioForm({
-    title: "",
-    subtitle: "Resident",
-    checklistType: "maintenance",
-    summary: "",
-    description: "",
-    caller: "",
-    opening: "",
-  });
-
-  await loadTrainerScenarios();
-
-  setTrainerScenarioMessage(
-    "Scenario updated successfully."
-  );
-
-  setTrainerSavingScenario(false);
-
-  return;
-}
-    
   const { data, error } = await supabase
     .from("scenarios")
     .insert({
@@ -374,16 +399,21 @@ const loadTrainerScenarios = async () => {
       caller: trainerScenarioForm.caller.trim(),
       opening: trainerScenarioForm.opening.trim(),
       is_active: true,
-      sort_order: scenarios.length + 1,
+      sort_order: trainerScenarios.length + 1,
     })
     .select()
     .single();
 
   if (error) {
-    console.error("Unable to create scenario:", error);
+    console.error(
+      "Unable to create scenario:",
+      error
+    );
+
     setTrainerScenarioMessage(
       "The scenario could not be created."
     );
+
     setTrainerSavingScenario(false);
     return;
   }
@@ -398,6 +428,31 @@ const loadTrainerScenarios = async () => {
     caller: data.caller,
     opening: data.opening,
   };
+
+  setScenarios((previous) => [
+    ...previous,
+    createdScenario,
+  ]);
+
+  setTrainerScenarioForm({
+    title: "",
+    subtitle: "Resident",
+    checklistType: "maintenance",
+    summary: "",
+    description: "",
+    caller: "",
+    opening: "",
+  });
+
+  await loadTrainerScenarios();
+
+  setTrainerScenarioMessage(
+    "Scenario created successfully."
+  );
+
+  setTrainerSavingScenario(false);
+};
+
 const handleToggleScenarioActive = async (item) => {
   setTrainerScenarioMessage("");
 
@@ -441,13 +496,17 @@ const handleToggleScenarioActive = async (item) => {
       opening: data.opening,
     };
 
-    setScenarios((previous) => [
-      ...previous.filter(
+    setScenarios((previous) => {
+      const withoutScenario = previous.filter(
         (scenarioItem) =>
           scenarioItem.id !== restoredScenario.id
-      ),
-      restoredScenario,
-    ]);
+      );
+
+      return [
+        ...withoutScenario,
+        restoredScenario,
+      ];
+    });
   } else {
     setScenarios((previous) =>
       previous.filter(
@@ -457,10 +516,11 @@ const handleToggleScenarioActive = async (item) => {
     );
 
     if (scenario.id === item.id) {
-      const remainingScenarios = scenarios.filter(
-        (scenarioItem) =>
-          scenarioItem.id !== item.id
-      );
+      const remainingScenarios =
+        scenarios.filter(
+          (scenarioItem) =>
+            scenarioItem.id !== item.id
+        );
 
       if (remainingScenarios.length > 0) {
         setScenario(remainingScenarios[0]);
@@ -584,38 +644,6 @@ const handleToggleScenarioActive = async (item) => {
   );
 };
 
-    setScenarios((previous) => [
-      ...previous.filter(
-        (scenarioItem) => scenarioItem.id !== item.id
-      ),
-      restoredScenario,
-    ]);
-  }
-};
-
-  setScenarios((previous) => [
-    ...previous,
-    createdScenario,
-  ]);
-
-  setTrainerScenarioForm({
-    title: "",
-    subtitle: "Resident",
-    checklistType: "maintenance",
-    summary: "",
-    description: "",
-    caller: "",
-    opening: "",
-  });
-
-    await loadTrainerScenarios();
-    
-  setTrainerScenarioMessage(
-    "Scenario created successfully."
-  );
-
-  setTrainerSavingScenario(false);
-};
   const chooseScenario = (item) => {
     setScenario(item);
     setAnswered(false);
