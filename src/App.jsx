@@ -580,7 +580,7 @@ const progressPercentage =
     },
   ];
 
-  const fallbackChecklist =
+ const fallbackChecklist =
   scenario.checklistType === "maintenance"
     ? maintenanceChecklist
     : scenario.checklistType === "prospect"
@@ -591,7 +591,16 @@ const databaseChecklist =
   databaseChecklists[scenario.checklistType] || [];
 
 const checklist =
-  const checklistScore = checklist.filter((item) => item.hit).length;
+  checklistSource === "supabase" && databaseChecklist.length > 0
+    ? databaseChecklist.map((item) => ({
+        label: item.label,
+        hit: (item.keywords || []).some((keyword) =>
+          transcript.includes(String(keyword).toLowerCase())
+        ),
+      }))
+    : fallbackChecklist;
+
+const checklistScore = checklist.filter((item) => item.hit).length;
 const checklistTotal = checklist.length;
   checklistSource === "supabase" && databaseChecklist.length > 0
     ? databaseChecklist.map((item) => ({
