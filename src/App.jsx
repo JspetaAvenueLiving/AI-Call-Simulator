@@ -259,17 +259,14 @@ const endCall = () => {
     return [...previous, scenario.id];
   });
 };
-    const completedCount = completedScenarioIds.length;
+
+const completedCount = completedScenarioIds.length;
 const totalScenarioCount = scenarios.length;
 
 const progressPercentage =
   totalScenarioCount > 0
     ? (completedCount / totalScenarioCount) * 100
     : 0;
-
-    return [...previous, scenario.id];
-  });
-};
 
   const transcript = lastMessages
     .map((message) => String(message.text || "").toLowerCase())
