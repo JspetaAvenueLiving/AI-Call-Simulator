@@ -135,6 +135,13 @@ const [checklistForm, setChecklistForm] = useState({
 });
 const [checklistMessage, setChecklistMessage] = useState("");
 const [savingChecklistItem, setSavingChecklistItem] = useState(false);
+  const [employee, setEmployee] = useState({
+  name: "",
+  employeeId: "",
+  location: "Calgary",
+});
+const [employeeReady, setEmployeeReady] = useState(false);
+const [employeeError, setEmployeeError] = useState("");
 const [trainerLoginError, setTrainerLoginError] = useState("");
 const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
   const [trainerScenarioForm, setTrainerScenarioForm] = useState({
@@ -851,6 +858,19 @@ const handleMoveChecklistItem = async (item, direction) => {
 };
   
   const chooseScenario = (item) => {
+    
+    const handleStartTraining = (event) => {
+  event.preventDefault();
+
+  if (!employee.name.trim()) {
+    setEmployeeError("Please enter your name to begin.");
+    return;
+  }
+
+  setEmployeeError("");
+  setEmployeeReady(true);
+};
+    
     setScenario(item);
     setAnswered(false);
     setShowResults(false);
@@ -2076,9 +2096,91 @@ const checklistTotal = checklist.length;
   </main>
 )}
 
+      {!employeeReady && !trainerOpen && (
+  <main className="mx-auto flex max-w-[1400px] justify-center px-4 py-6">
+    <div className="w-full max-w-md rounded-2xl border-2 border-[#3b735d] bg-[#fbfcf9] p-6 shadow-sm">
+      <div className="mb-5 flex items-center gap-3">
+        <div className="rounded-lg bg-[#2f6655] p-2 text-white">
+          <Headphones size={20} />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold text-[#234b40]">
+            Start Training
+          </h2>
+          <p className="text-xs text-[#667d73]">
+            Enter your details so your results are recorded.
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleStartTraining} className="space-y-4">
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+            Full name *
+          </label>
+          <input
+            value={employee.name}
+            onChange={(event) => {
+              setEmployee({ ...employee, name: event.target.value });
+              setEmployeeError("");
+            }}
+            placeholder="Your name"
+            className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2.5 text-sm text-[#285c4b] outline-none placeholder:text-[#759085] focus:border-[#3b735d]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+            Employee ID (optional)
+          </label>
+          <input
+            value={employee.employeeId}
+            onChange={(event) =>
+              setEmployee({ ...employee, employeeId: event.target.value })
+            }
+            placeholder="Employee ID"
+            className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2.5 text-sm text-[#285c4b] outline-none placeholder:text-[#759085] focus:border-[#3b735d]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+            Location
+          </label>
+          <select
+            value={employee.location}
+            onChange={(event) =>
+              setEmployee({ ...employee, location: event.target.value })
+            }
+            className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2.5 text-sm text-[#285c4b]"
+          >
+            <option>Calgary</option>
+            <option>Edmonton</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        {employeeError && (
+          <div className="rounded-lg border border-[#d9b1aa] bg-[#f8ece9] px-3 py-2 text-xs font-medium text-[#875146]">
+            {employeeError}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="w-full rounded-lg bg-[#326b55] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#285b48]"
+        >
+          Begin training
+        </button>
+      </form>
+    </div>
+  </main>
+)}
+      
       <main
         className={
-          trainerOpen
+         trainerOpen || !employeeReady
             ? "hidden"
             : "mx-auto max-w-[1400px] px-2 py-2"
         }
