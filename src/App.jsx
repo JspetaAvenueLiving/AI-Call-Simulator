@@ -124,7 +124,9 @@ const [checklistSource, setChecklistSource] = useState("fallback");
   const [trainerOpen, setTrainerOpen] = useState(false);
   const [trainerEmail, setTrainerEmail] = useState("");
   const [trainerPassword, setTrainerPassword] = useState("");
-
+const [trainerAuthenticated, setTrainerAuthenticated] = useState(false);
+const [trainerLoginError, setTrainerLoginError] = useState("");
+const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
   
 
   useEffect(() => {
@@ -213,6 +215,36 @@ const [checklistSource, setChecklistSource] = useState("fallback");
 
   loadChecklists();
 }, []);
+  const handleTrainerLogin = async (event) => {
+  event.preventDefault();
+
+  setTrainerLoginError("");
+  setTrainerLoggingIn(true);
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: trainerEmail.trim(),
+    password: trainerPassword,
+  });
+
+  if (error) {
+    setTrainerLoginError("Incorrect email or password.");
+    setTrainerLoggingIn(false);
+    return;
+  }
+
+  setTrainerAuthenticated(true);
+  setTrainerLoggingIn(false);
+  setTrainerPassword("");
+};
+  const handleTrainerLogout = async () => {
+  await supabase.auth.signOut();
+
+  setTrainerAuthenticated(false);
+  setTrainerOpen(false);
+  setTrainerEmail("");
+  setTrainerPassword("");
+  setTrainerLoginError("");
+};
   const chooseScenario = (item) => {
     setScenario(item);
     setAnswered(false);
@@ -666,74 +698,146 @@ const checklistTotal = checklist.length;
         </div>
       </header>
 
-      {trainerOpen && (
-        <main className="mx-auto flex max-w-[1400px] justify-center px-4 py-4">
-          <div className="w-full max-w-md rounded-2xl border-2 border-[#3b735d] bg-[#fbfcf9] p-6 shadow-sm">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="rounded-lg bg-[#2f6655] p-2 text-white">
-                <UserCog size={20} />
-              </div>
+    {trainerOpen && (
+  <main className="mx-auto flex max-w-[1400px] justify-center px-4 py-4">
+    {!trainerAuthenticated ? (
+      <div className="w-full max-w-md rounded-2xl border-2 border-[#3b735d] bg-[#fbfcf9] p-6 shadow-sm">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="rounded-lg bg-[#2f6655] p-2 text-white">
+            <UserCog size={20} />
+          </div>
 
-              <div>
-                <h2 className="text-xl font-semibold text-[#234b40]">
-                  Trainer Login
-                </h2>
-                <p className="text-xs text-[#667d73]">
-                  Sign in to access trainer tools.
-                </p>
-              </div>
+          <div>
+            <h2 className="text-xl font-semibold text-[#234b40]">
+              Trainer Login
+            </h2>
+
+            <p className="text-xs text-[#667d73]">
+              Sign in to access trainer tools.
+            </p>
+          </div>
+        </div>
+
+        <form
+          onSubmit={handleTrainerLogin}
+          className="space-y-4"
+        >
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+              Email
+            </label>
+
+            <input
+              type="email"
+              value={trainerEmail}
+              onChange={(event) => {
+                setTrainerEmail(event.target.value);
+                setTrainerLoginError("");
+              }}
+              placeholder="Trainer email"
+              autoComplete="email"
+              required
+              className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2.5 text-sm text-[#285c4b] outline-none placeholder:text-[#759085] focus:border-[#3b735d]"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-[#315f54]">
+              Password
+            </label>
+
+            <input
+              type="password"
+              value={trainerPassword}
+              onChange={(event) => {
+                setTrainerPassword(event.target.value);
+                setTrainerLoginError("");
+              }}
+              placeholder="Password"
+              autoComplete="current-password"
+              required
+              className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2.5 text-sm text-[#285c4b] outline-none placeholder:text-[#759085] focus:border-[#3b735d]"
+            />
+          </div>
+
+          {trainerLoginError && (
+            <div className="rounded-lg border border-[#d9b1aa] bg-[#f8ece9] px-3 py-2 text-xs font-medium text-[#875146]">
+              {trainerLoginError}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={trainerLoggingIn}
+            className="w-full rounded-lg bg-[#326b55] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#285b48] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {trainerLoggingIn ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        <button
+          type="button"
+          onClick={() => {
+            setTrainerOpen(false);
+            setTrainerLoginError("");
+            setTrainerPassword("");
+          }}
+          className="mt-3 w-full rounded-lg border-2 border-[#3b735d] bg-white px-4 py-2 text-sm font-semibold text-[#285c4b] hover:bg-[#e7f1eb]"
+        >
+          Back to simulator
+        </button>
+      </div>
+    ) : (
+      <div className="w-full max-w-4xl rounded-2xl border-2 border-[#3b735d] bg-[#fbfcf9] p-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="mb-2 inline-flex rounded-full bg-[#e1eee7] px-3 py-1 text-xs font-semibold text-[#285c4b]">
+              Authenticated trainer
             </div>
 
-            <form
-              onSubmit={(event) => event.preventDefault()}
-              className="space-y-4"
-            >
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-[#315f54]">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={trainerEmail}
-                  onChange={(event) => setTrainerEmail(event.target.value)}
-                  placeholder="Trainer email"
-                  className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2.5 text-sm text-[#285c4b] outline-none placeholder:text-[#759085] focus:border-[#3b735d]"
-                />
-              </div>
+            <h2 className="text-2xl font-semibold text-[#234b40]">
+              Trainer Portal
+            </h2>
 
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-[#315f54]">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={trainerPassword}
-                  onChange={(event) =>
-                    setTrainerPassword(event.target.value)
-                  }
-                  placeholder="Password"
-                  className="w-full rounded-lg border border-[#b7ccc1] bg-white px-3 py-2.5 text-sm text-[#285c4b] outline-none placeholder:text-[#759085] focus:border-[#3b735d]"
-                />
-              </div>
+            <p className="mt-1 text-sm text-[#667d73]">
+              Trainer access authenticated successfully.
+            </p>
 
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-[#326b55] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#285b48]"
-              >
-                Sign in
-              </button>
-            </form>
-
-            <button
-              type="button"
-              onClick={() => setTrainerOpen(false)}
-              className="mt-3 w-full rounded-lg border-2 border-[#3b735d] bg-white px-4 py-2 text-sm font-semibold text-[#285c4b] hover:bg-[#e7f1eb]"
-            >
-              Back to simulator
-            </button>
+            <p className="mt-2 text-xs font-medium text-[#557469]">
+              Signed in as {trainerEmail}
+            </p>
           </div>
-        </main>
-      )}
+
+          <button
+            type="button"
+            onClick={handleTrainerLogout}
+            className="rounded-lg border-2 border-[#3b735d] bg-white px-4 py-2 text-sm font-semibold text-[#285c4b] hover:bg-[#e7f1eb]"
+          >
+            Sign out
+          </button>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-[#c7d8cf] bg-[#f3f7f4] p-5">
+          <h3 className="text-base font-semibold text-[#285749]">
+            Scenario Manager
+          </h3>
+
+          <p className="mt-1 text-sm text-[#667d73]">
+            Scenario creation and editing controls will appear here.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setTrainerOpen(false)}
+          className="mt-4 rounded-lg bg-[#326b55] px-4 py-2 text-sm font-semibold text-white hover:bg-[#285b48]"
+        >
+          Return to simulator
+        </button>
+      </div>
+    )}
+  </main>
+)}
 
       <main
         className={
