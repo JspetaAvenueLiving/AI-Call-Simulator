@@ -115,6 +115,7 @@ const [scenarioSource, setScenarioSource] = useState("fallback");
 const [checklistSource, setChecklistSource] = useState("fallback");
   const [answered, setAnswered] = useState(false);
   const [completedScenarioIds, setCompletedScenarioIds] = useState([]);
+  const [scenarioScores, setScenarioScores] = useState({});
   const [reply, setReply] = useState("");
   const [messages, setMessages] = useState([]);
   const [showResults, setShowResults] = useState(false);
