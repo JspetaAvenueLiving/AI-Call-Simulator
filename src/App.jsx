@@ -126,6 +126,15 @@ const [checklistSource, setChecklistSource] = useState("fallback");
   const [trainerPassword, setTrainerPassword] = useState("");
 const [trainerAuthenticated, setTrainerAuthenticated] = useState(false);
   const [trainerTab, setTrainerTab] = useState("scenarios");
+  const [trainerChecklistType, setTrainerChecklistType] = useState("maintenance");
+const [trainerChecklistItems, setTrainerChecklistItems] = useState([]);
+const [editingChecklistItemId, setEditingChecklistItemId] = useState(null);
+const [checklistForm, setChecklistForm] = useState({
+  label: "",
+  keywords: "",
+});
+const [checklistMessage, setChecklistMessage] = useState("");
+const [savingChecklistItem, setSavingChecklistItem] = useState(false);
 const [trainerLoginError, setTrainerLoginError] = useState("");
 const [trainerLoggingIn, setTrainerLoggingIn] = useState(false);
   const [trainerScenarioForm, setTrainerScenarioForm] = useState({
@@ -645,6 +654,202 @@ const handleToggleScenarioActive = async (item) => {
   );
 };
 
+  const parseKeywordText = (text) =>
+  text
+    .split(/[\n,]+/)
+    .map((keyword) => keyword.trim().toLowerCase())
+    .filter((keyword) => keyword.length > 0);
+
+const loadTrainerChecklistItems = async () => {
+  const { data, error } = await supabase
+    .from("checklist_items")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error(
+      "Unable to load checklist items for the Trainer Portal:",
+      error
+    );
+    setChecklistMessage("Unable to load checklist criteria.");
+    return;
+  }
+
+  const items = data || [];
+  setTrainerChecklistItems(items);
+
+  const grouped = items
+    .filter((item) => item.is_active)
+    .reduce((result, item) => {
+      if (!result[item.checklist_type]) {
+        result[item.checklist_type] = [];
+      }
+
+      result[item.checklist_type].push({
+        id: item.id,
+        label: item.label,
+        keywords: item.keywords || [],
+        sortOrder: item.sort_order,
+      });
+
+      return result;
+    }, {});
+
+  if (Object.keys(grouped).length > 0) {
+    setDatabaseChecklists(grouped);
+    setChecklistSource("supabase");
+  }
+};
+
+const handleEditChecklistItem = (item) => {
+  setEditingChecklistItemId(item.id);
+
+  setChecklistForm({
+    label: item.label || "",
+    keywords: (item.keywords || []).join(", "),
+  });
+
+  setChecklistMessage(
+    `Editing "${item.label}". Make your changes and select Save Changes.`
+  );
+};
+
+const handleCancelChecklistEdit = () => {
+  setEditingChecklistItemId(null);
+  setChecklistForm({ label: "", keywords: "" });
+  setChecklistMessage("");
+};
+
+const handleSaveChecklistItem = async (event) => {
+  event.preventDefault();
+  setChecklistMessage("");
+
+  const label = checklistForm.label.trim();
+  const keywords = parseKeywordText(checklistForm.keywords);
+
+  if (!label || keywords.length === 0) {
+    setChecklistMessage(
+      "Enter a criterion name and at least one recognition phrase."
+    );
+    return;
+  }
+
+  setSavingChecklistItem(true);
+
+  if (editingChecklistItemId) {
+    const { error } = await supabase
+      .from("checklist_items")
+      .update({ label, keywords })
+      .eq("id", editingChecklistItemId);
+
+    if (error) {
+      console.error("Unable to update checklist item:", error);
+      setChecklistMessage("The criterion could not be updated.");
+      setSavingChecklistItem(false);
+      return;
+    }
+
+    setEditingChecklistItemId(null);
+    setChecklistForm({ label: "", keywords: "" });
+    await loadTrainerChecklistItems();
+    setChecklistMessage("Criterion updated successfully.");
+    setSavingChecklistItem(false);
+    return;
+  }
+
+  const nextSortOrder =
+    visibleChecklistItems.length > 0
+      ? Math.max(
+          ...visibleChecklistItems.map((item) => item.sort_order)
+        ) + 1
+      : 1;
+
+  const { error } = await supabase.from("checklist_items").insert({
+    checklist_type: trainerChecklistType,
+    label,
+    keywords,
+    sort_order: nextSortOrder,
+    is_active: true,
+  });
+
+  if (error) {
+    console.error("Unable to add checklist item:", error);
+    setChecklistMessage("The criterion could not be added.");
+    setSavingChecklistItem(false);
+    return;
+  }
+
+  setChecklistForm({ label: "", keywords: "" });
+  await loadTrainerChecklistItems();
+  setChecklistMessage("Criterion added successfully.");
+  setSavingChecklistItem(false);
+};
+
+const handleToggleChecklistItemActive = async (item) => {
+  setChecklistMessage("");
+
+  const newStatus = !item.is_active;
+
+  if (!newStatus && activeChecklistCount <= 1) {
+    setChecklistMessage(
+      "At least one criterion must stay active in each checklist."
+    );
+    return;
+  }
+
+  const { error } = await supabase
+    .from("checklist_items")
+    .update({ is_active: newStatus })
+    .eq("id", item.id);
+
+  if (error) {
+    console.error("Unable to change checklist item status:", error);
+    setChecklistMessage("The criterion status could not be changed.");
+    return;
+  }
+
+  await loadTrainerChecklistItems();
+
+  setChecklistMessage(
+    newStatus
+      ? `"${item.label}" activated.`
+      : `"${item.label}" deactivated.`
+  );
+};
+
+const handleMoveChecklistItem = async (item, direction) => {
+  const index = visibleChecklistItems.findIndex(
+    (checklistItem) => checklistItem.id === item.id
+  );
+
+  const neighbor = visibleChecklistItems[index + direction];
+
+  if (!neighbor) {
+    return;
+  }
+
+  const { error: firstError } = await supabase
+    .from("checklist_items")
+    .update({ sort_order: neighbor.sort_order })
+    .eq("id", item.id);
+
+  const { error: secondError } = await supabase
+    .from("checklist_items")
+    .update({ sort_order: item.sort_order })
+    .eq("id", neighbor.id);
+
+  if (firstError || secondError) {
+    console.error(
+      "Unable to reorder checklist items:",
+      firstError || secondError
+    );
+    setChecklistMessage("The criterion could not be moved.");
+    return;
+  }
+
+  await loadTrainerChecklistItems();
+};
+  
   const chooseScenario = (item) => {
     setScenario(item);
     setAnswered(false);
@@ -704,7 +909,21 @@ const filteredTrainerScenarios = trainerScenarios.filter((item) => {
   return item.checklist_type === trainerScenarioFilter;
 });
   
-const completedCount = completedScenarioIds.length;
+const checklistTypeLabels = {
+  maintenance: "Resident - Maintenance",
+  memo: "Resident - Memo required",
+  prospect: "Prospect",
+};
+
+const visibleChecklistItems = trainerChecklistItems
+  .filter((item) => item.checklist_type === trainerChecklistType)
+  .sort((a, b) => a.sort_order - b.sort_order);
+
+const activeChecklistCount = visibleChecklistItems.filter(
+  (item) => item.is_active
+).length;
+  
+  const completedCount = completedScenarioIds.length;
 const totalScenarioCount = scenarios.length;
 
 const progressPercentage =
@@ -1311,7 +1530,10 @@ const checklistTotal = checklist.length;
 
   <button
     type="button"
-    onClick={() => setTrainerTab("checklists")}
+    onClick={() => {
+  setTrainerTab("checklists");
+  loadTrainerChecklistItems();
+}}
     className={`rounded-lg px-4 py-2 text-sm font-semibold ${
       trainerTab === "checklists"
         ? "bg-[#326653] text-white"
