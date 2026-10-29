@@ -293,6 +293,54 @@ const [editingScenarioId, setEditingScenarioId] = useState(null);
 
   setTrainerSavingScenario(true);
 
+    if (editingScenarioId) {
+  const { error } = await supabase
+    .from("scenarios")
+    .update({
+      title: trainerScenarioForm.title.trim(),
+      subtitle: trainerScenarioForm.subtitle,
+      checklist_type: trainerScenarioForm.checklistType,
+      summary: trainerScenarioForm.summary.trim(),
+      description:
+        trainerScenarioForm.description.trim() ||
+        trainerScenarioForm.summary.trim(),
+      caller: trainerScenarioForm.caller.trim(),
+      opening: trainerScenarioForm.opening.trim(),
+    })
+    .eq("id", editingScenarioId);
+
+  if (error) {
+    console.error("Unable to update scenario:", error);
+    setTrainerScenarioMessage(
+      "The scenario could not be updated."
+    );
+    setTrainerSavingScenario(false);
+    return;
+  }
+
+  setEditingScenarioId(null);
+
+  setTrainerScenarioForm({
+    title: "",
+    subtitle: "Resident",
+    checklistType: "maintenance",
+    summary: "",
+    description: "",
+    caller: "",
+    opening: "",
+  });
+
+  await loadTrainerScenarios();
+
+  setTrainerScenarioMessage(
+    "Scenario updated successfully."
+  );
+
+  setTrainerSavingScenario(false);
+
+  return;
+}
+    
   const { data, error } = await supabase
     .from("scenarios")
     .insert({
@@ -371,6 +419,22 @@ const [editingScenarioId, setEditingScenarioId] = useState(null);
       caller: item.caller,
       opening: item.opening,
     };
+
+    const handleEditScenario = (item) => {
+  setEditingScenarioId(item.id);
+
+  setTrainerScenarioForm({
+    title: item.title || "",
+    subtitle: item.subtitle || "Resident",
+    checklistType: item.checklist_type || "maintenance",
+    summary: item.summary || "",
+    description: item.description || "",
+    caller: item.caller || "",
+    opening: item.opening || "",
+  });
+
+  setTrainerScenarioMessage("");
+};
 
     setScenarios((previous) => [
       ...previous.filter(
@@ -941,6 +1005,30 @@ const checklistTotal = checklist.length;
             disabled={trainerLoggingIn}
             className="w-full rounded-lg bg-[#326b55] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#285b48] disabled:cursor-not-allowed disabled:opacity-50"
           >
+            {editingScenarioId && (
+  <button
+    type="button"
+    onClick={() => {
+      setEditingScenarioId(null);
+
+      setTrainerScenarioForm({
+        title: "",
+        subtitle: "Resident",
+        checklistType: "maintenance",
+        summary: "",
+        description: "",
+        caller: "",
+        opening: "",
+      });
+
+      setTrainerScenarioMessage("");
+    }}
+    className="w-full rounded-lg border-2 border-[#3b735d] bg-white px-4 py-2 text-sm font-semibold text-[#285c4b]"
+  >
+    Cancel editing
+  </button>
+)}
+            
             {trainerLoggingIn ? "Signing in..." : "Sign in"}
           </button>
         </form>
@@ -1099,6 +1187,15 @@ const checklistTotal = checklist.length;
 >
   {item.is_active ? "Active" : "Inactive"}
 </div>
+
+            <button
+  type="button"
+  onClick={() => handleEditScenario(item)}
+  className="rounded-lg border border-[#9bb7ab] bg-[#edf4ef] px-2.5 py-1.5 text-[11px] font-semibold text-[#285c4b]"
+>
+  Edit
+</button>
+            
   <button
     type="button"
     onClick={() => handleToggleScenarioActive(item)}
@@ -1118,7 +1215,7 @@ const checklistTotal = checklist.length;
 
   <div className="rounded-xl border-2 border-[#3b735d] bg-white p-4">
     <h3 className="text-base font-semibold text-[#285749]">
-      Add Scenario
+      {editingScenarioId ? "Edit Scenario" : "Add Scenario"}
     </h3>
 
     <p className="mt-1 text-xs text-[#667d73]">
@@ -1285,8 +1382,10 @@ const checklistTotal = checklist.length;
         className="w-full rounded-lg bg-[#326b55] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#285b48] disabled:opacity-50"
       >
         {trainerSavingScenario
-          ? "Creating scenario..."
-          : "Create scenario"}
+  ? "Saving..."
+  : editingScenarioId
+  ? "Save Changes"
+  : "Create Scenario"}
       </button>
     </form>
   </div>
